@@ -1,5 +1,6 @@
 // components/Sidebar.js
 import styled from "styled-components";
+import UserBadge from "./UserBadge";
 
 export default function Sidebar({
   collapsed,
@@ -7,73 +8,73 @@ export default function Sidebar({
   threads,
   activeId,
   onSelect,
+  onCreateThread,
   user,
   isAnonymous,
+  mediaTokens,
+  onGoogleLogin,
+  onLogout,
 }) {
   return (
     <Wrap $collapsed={collapsed}>
       <Top>
         <Brand>
-          {/* Collapsed: logo acts as toggle (only shows hover affordance) */}
-          {/* Expanded: logo is just a logo (no hover affordance) */}
           <LogoButton
             type="button"
             onClick={collapsed ? onToggle : undefined}
             aria-label={collapsed ? "Expand sidebar" : "Logo"}
-            title={collapsed ? "Expand sidebar" : "HappySRT"}
+            title={collapsed ? "Expand sidebar" : "happysrt"}
             $clickable={collapsed}
           >
-            <LogoImg src="/logo.png" alt="HappySRT" />
+            <LogoImg src="/logo.png" alt="happysrt" />
             <LogoHoverOverlay $enabled={collapsed}>
               <OverlayIcon aria-hidden="true">»</OverlayIcon>
             </LogoHoverOverlay>
           </LogoButton>
 
-          {!collapsed && <BrandText>HappySRT</BrandText>}
+          {!collapsed && <BrandText>happysrt</BrandText>}
         </Brand>
 
-        {/* Expanded: show collapse button on the right */}
         {!collapsed && (
-          <CollapseButton
-            type="button"
-            onClick={onToggle}
-            aria-label="Collapse sidebar"
-            title="Collapse sidebar"
-          >
+          <CollapseButton type="button" onClick={onToggle} aria-label="Collapse sidebar" title="Collapse sidebar">
             «
           </CollapseButton>
         )}
       </Top>
 
-      <NavLabel $collapsed={collapsed}>Threads</NavLabel>
+      {!collapsed && (
+        <>
+          <NewThreadButton type="button" onClick={onCreateThread}>
+            + New thread
+          </NewThreadButton>
 
-      <ThreadList>
-        {threads.map((t) => (
-          <ThreadItem
-            key={t.id}
-            $active={t.id === activeId}
-            onClick={() => onSelect(t.id)}
-            title={t.title}
-            $collapsed={collapsed}
-          >
-            {!collapsed ? <span>{t.title}</span> : null}
-          </ThreadItem>
-        ))}
-      </ThreadList>
+          <NavLabel>Threads</NavLabel>
+
+          <ThreadList>
+            {threads.map((t) => (
+              <ThreadItem
+                key={t.id}
+                $active={t.id === activeId}
+                onClick={() => onSelect(t.id)}
+                title={t.title}
+              >
+                <span>{t.title}</span>
+              </ThreadItem>
+            ))}
+          </ThreadList>
+        </>
+      )}
 
       <Footer>
-        <UserChip>
-          <Avatar />
-          {!collapsed && (
-            <UserMeta>
-              <UserLine>
-                {isAnonymous ? "Guest" : "User"}{" "}
-                <Pill $accent>{isAnonymous ? "anonymous" : "signed in"}</Pill>
-              </UserLine>
-              <UserSub>{user?.$id ? `ID: ${user.$id}` : ""}</UserSub>
-            </UserMeta>
-          )}
-        </UserChip>
+        {!collapsed && (
+          <UserBadge
+            user={user}
+            isAnonymous={isAnonymous}
+            mediaTokens={mediaTokens}
+            onGoogleLogin={onGoogleLogin}
+            onLogout={onLogout}
+          />
+        )}
       </Footer>
     </Wrap>
   );
@@ -114,17 +115,14 @@ const LogoButton = styled.button`
   display: inline-grid;
   place-items: center;
 
-  cursor: ${(p) => (p.$clickable ? "default" : "default")};
-
-  /* Only clickable when collapsed */
   ${(p) =>
-    p.$clickable &&
-    `
+    p.$clickable
+      ? `
     cursor: default;
-
-    ${Wrap}:hover & {
-      cursor: pointer;
-    }
+    ${Wrap}:hover & { cursor: pointer; }
+  `
+      : `
+    cursor: default;
   `}
 `;
 
@@ -136,7 +134,6 @@ const LogoImg = styled.img`
   border-radius: 8px;
 `;
 
-/* Overlay only enabled when collapsed */
 const LogoHoverOverlay = styled.div`
   position: absolute;
   inset: 0;
@@ -175,7 +172,6 @@ const BrandText = styled.div`
   color: var(--text);
 `;
 
-/* Right-side collapse control (only visible when expanded) */
 const CollapseButton = styled.button`
   width: 34px;
   height: 34px;
@@ -190,17 +186,31 @@ const CollapseButton = styled.button`
   }
 `;
 
+const NewThreadButton = styled.button`
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  background: rgba(239, 68, 68, 0.08);
+  color: var(--accent);
+  font-weight: 900;
+  padding: 10px 12px;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(239, 68, 68, 0.12);
+  }
+`;
+
 const NavLabel = styled.div`
   font-size: 12px;
   color: var(--muted);
   padding: 0 6px;
-  display: ${(p) => (p.$collapsed ? "none" : "block")};
 `;
 
 const ThreadList = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   padding-right: 4px;
   overflow: auto;
 `;
@@ -211,9 +221,8 @@ const ThreadItem = styled.button`
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 10px;
+  padding: 10px 10px;
 
-  padding: ${(p) => (p.$collapsed ? "10px 6px" : "10px 10px")};
   border-radius: 12px;
   border: 1px solid ${(p) => (p.$active ? "rgba(239,68,68,0.35)" : "transparent")};
   background: ${(p) => (p.$active ? "var(--panel)" : "transparent")};
@@ -229,7 +238,7 @@ const ThreadItem = styled.button`
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-weight: ${(p) => (p.$active ? "700" : "600")};
+    font-weight: ${(p) => (p.$active ? "800" : "650")};
   }
 `;
 
@@ -237,54 +246,4 @@ const Footer = styled.div`
   margin-top: auto;
   padding-top: 12px;
   border-top: 1px solid var(--border);
-`;
-
-const UserChip = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px;
-  border-radius: 14px;
-  background: rgba(0,0,0,0.03);
-  border: 1px solid var(--border);
-`;
-
-const Avatar = styled.div`
-  width: 34px;
-  height: 34px;
-  border-radius: 999px;
-  background: rgba(0,0,0,0.08);
-`;
-
-const UserMeta = styled.div`
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-`;
-
-const UserLine = styled.div`
-  font-size: 13px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--text);
-`;
-
-const UserSub = styled.div`
-  font-size: 12px;
-  color: var(--muted);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-`;
-
-const Pill = styled.span`
-  font-size: 11px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  border: 1px solid ${(p) => (p.$accent ? "rgba(239,68,68,0.25)" : "var(--border)")};
-  background: ${(p) => (p.$accent ? "rgba(239,68,68,0.08)" : "var(--hover)")};
-  color: ${(p) => (p.$accent ? "var(--accent)" : "var(--muted)")};
-  font-weight: 700;
 `;

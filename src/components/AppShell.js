@@ -1,25 +1,13 @@
 // components/AppShell.js
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import styled from "styled-components";
 import Sidebar from "./Sidebar";
 import ThreadView from "./ThreadView";
+import { useThreads } from "../contexts/threadsContext";
 
-export default function AppShell({ user, isAnonymous }) {
-  const threads = useMemo(
-    () => [
-      { id: "default", title: "Default (How it works)", kind: "tutorial" },
-      { id: "t1", title: "Interview – sample", kind: "blank" },
-      { id: "t2", title: "Meeting – sample", kind: "blank" },
-      { id: "t3", title: "YouTube Clip – sample", kind: "blank" },
-      { id: "t4", title: "Podcast – sample", kind: "blank" },
-    ],
-    []
-  );
-
+export default function AppShell({ user, isAnonymous, mediaTokens, onGoogleLogin, onLogout }) {
+  const { threads, activeId, setActiveId, activeThread, createThread } = useThreads();
   const [collapsed, setCollapsed] = useState(false);
-  const [activeId, setActiveId] = useState("default");
-
-  const activeThread = threads.find((t) => t.id === activeId) || threads[0];
 
   return (
     <Shell>
@@ -29,8 +17,12 @@ export default function AppShell({ user, isAnonymous }) {
         threads={threads}
         activeId={activeId}
         onSelect={setActiveId}
+        onCreateThread={createThread}
         user={user}
         isAnonymous={isAnonymous}
+        mediaTokens={mediaTokens}
+        onGoogleLogin={onGoogleLogin}
+        onLogout={onLogout}
       />
 
       <Main>

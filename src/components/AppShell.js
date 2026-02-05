@@ -6,7 +6,7 @@ import ThreadView from "./ThreadView";
 import { useThreads } from "../contexts/threadsContext";
 
 export default function AppShell({ user, isAnonymous, mediaTokens, onGoogleLogin, onLogout }) {
-  const { threads, activeId, setActiveId, activeThread, createThread } = useThreads();
+  const { threads, activeId, setActiveId, activeThread, loadingThreads, createThread } = useThreads();
   const [collapsed, setCollapsed] = useState(false);
 
   return (
@@ -26,7 +26,7 @@ export default function AppShell({ user, isAnonymous, mediaTokens, onGoogleLogin
       />
 
       <Main>
-        <ThreadView thread={activeThread} />
+        <ThreadView thread={activeThread} loading={loadingThreads} />
       </Main>
     </Shell>
   );

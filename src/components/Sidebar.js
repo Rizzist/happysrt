@@ -32,7 +32,7 @@ export default function Sidebar({
             </LogoHoverOverlay>
           </LogoButton>
 
-          {!collapsed && <BrandText>happysrt</BrandText>}
+          {!collapsed && <BrandText>HappySRT</BrandText>}
         </Brand>
 
         {!collapsed && (

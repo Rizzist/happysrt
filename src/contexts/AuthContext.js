@@ -129,6 +129,12 @@ export function AuthProvider({ children }) {
     account.createOAuth2Session("google", origin, origin);
   };
 
+  const getJwt = async () => {
+    const r = await account.createJWT();
+    return r?.jwt;
+  };
+
+
   const logout = async () => {
     await account.deleteSession("current");
     setUser(null);
@@ -154,6 +160,7 @@ export function AuthProvider({ children }) {
     refresh,
     loginWithGoogle,
     logout,
+    getJwt
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

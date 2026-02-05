@@ -1,6 +1,6 @@
-// pages/_app.js
 import { AuthProvider } from "../contexts/AuthContext";
 import { ThreadsProvider } from "@/contexts/threadsContext";
+import { FfmpegProvider } from "../contexts/FfmpegContext";
 import { createGlobalStyle } from "styled-components";
 
 const GlobalStyle = createGlobalStyle`
@@ -28,10 +28,12 @@ const GlobalStyle = createGlobalStyle`
 export default function App({ Component, pageProps }) {
   return (
     <AuthProvider>
-      <ThreadsProvider>
-        <GlobalStyle />
-        <Component {...pageProps} />
-      </ThreadsProvider>
+      <FfmpegProvider>
+        <ThreadsProvider>
+          <GlobalStyle />
+          <Component {...pageProps} />
+        </ThreadsProvider>
+      </FfmpegProvider>
     </AuthProvider>
   );
 }

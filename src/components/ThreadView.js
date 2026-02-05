@@ -4,93 +4,84 @@ import TutorialThread from "./TutorialThread";
 import ThreadComposer from "./ThreadComposer";
 import { useThreads } from "../contexts/threadsContext";
 
-export default function ThreadView({ thread }) {
-  const { addItem } = useThreads();
-  const isDefault = thread?.id === "default";
+export default function ThreadView({ thread, loading }) {
+  const { renameThread, deleteThread } = useThreads();
 
-  const startRun = async ({ file, options }) => {
-    // v1: local-only. We store file metadata (not the file itself).
-    // Later: upload to B2/Appwrite storage, store mediaUrl/fileId, then run jobs.
-    await addItem(thread.id, {
-      type: "run",
-      payload: {
-        media: {
-          sourceType: "local",
-          filename: file?.name || "",
-          size: file?.size || 0,
-          mime: file?.type || "",
-        },
-        options,
-        status: "ready",
-      },
-    });
+  if (loading || !thread) {
+    return (
+      <Wrap>
+        <Header>
+          <Left>
+            <Title>Loading…</Title>
+            <Sub>Preparing your threads</Sub>
+          </Left>
+        </Header>
+        <Body />
+      </Wrap>
+    );
+  }
+
+  const isDefault = thread.id === "default";
+
+  const onRename = async () => {
+    const next = window.prompt("Rename thread:", thread?.title || "");
+    if (!next) return;
+    await renameThread(thread.id, next);
+  };
+
+  const onDelete = async () => {
+    const ok = window.confirm(`Delete "${thread?.title}"?`);
+    if (!ok) return;
+    await deleteThread(thread.id);
   };
 
   return (
     <Wrap>
       <Header>
         <Left>
-          <Title>{thread?.title || "Thread"}</Title>
+          <Title title={thread?.title || ""}>{thread?.title || "Thread"}</Title>
           <Sub>
-            {isDefault ? "Tutorial thread (always available)" : "Upload media → transcribe / translate / summarize"}
+            {isDefault
+              ? "Tutorial thread (always available)"
+              : "Upload media → transcribe / translate / summarize"}
           </Sub>
         </Left>
+
+        {!isDefault && (
+          <Right>
+            <SmallButton type="button" onClick={onRename}>
+              Rename
+            </SmallButton>
+            <DangerButton type="button" onClick={onDelete}>
+              Delete
+            </DangerButton>
+          </Right>
+        )}
       </Header>
 
       <Body>
         {isDefault ? (
           <TutorialThread />
         ) : (
-          <Messages>
-            {(thread?.items || []).length === 0 ? (
-              <Empty>
-                <EmptyTitle>No runs yet</EmptyTitle>
-                <EmptySub>Upload an audio/video file below, choose options, then click Start.</EmptySub>
-              </Empty>
-            ) : (
-              (thread.items || []).map((it) => (
-                <Card key={it.id}>
-                  <CardTop>
-                    <CardTitle>Run</CardTitle>
-                    <CardTime>{new Date(it.createdAt).toLocaleString()}</CardTime>
-                  </CardTop>
+          <Empty>
+            <EmptyCard>
+              <EmptyTitle>Drop a file to get started</EmptyTitle>
+              <EmptySub>
+                Choose what you want: transcription, translation, summarization — or any combo.
+              </EmptySub>
 
-                  <Row>
-                    <Key>File</Key>
-                    <Val>{it?.payload?.media?.filename || "—"}</Val>
-                  </Row>
-
-                  <Row>
-                    <Key>Transcription</Key>
-                    <Val>{it?.payload?.options?.transcribeLang || "auto"}</Val>
-                  </Row>
-
-                  <Row>
-                    <Key>Translate</Key>
-                    <Val>
-                      {(it?.payload?.options?.translate || []).length
-                        ? (it.payload.options.translate || []).join(", ")
-                        : "off"}
-                    </Val>
-                  </Row>
-
-                  <Row>
-                    <Key>Summary</Key>
-                    <Val>{it?.payload?.options?.summarize ? "on" : "off"}</Val>
-                  </Row>
-
-                  <Row>
-                    <Key>Status</Key>
-                    <Val>{it?.payload?.status || "—"}</Val>
-                  </Row>
-                </Card>
-              ))
-            )}
-          </Messages>
+              <EmptyHints>
+                <li>Audio/video supported (later: Backblaze B2 + links)</li>
+                <li>Runs will show up here like messages</li>
+                <li>We’ll wire models/providers next</li>
+              </EmptyHints>
+            </EmptyCard>
+          </Empty>
         )}
       </Body>
 
-      {!isDefault && <ThreadComposer onStart={startRun} />}
+      {!isDefault && <ThreadComposer thread={thread} />}
+
     </Wrap>
   );
 }
@@ -100,24 +91,39 @@ const Wrap = styled.div`
   min-width: 0;
   display: flex;
   flex-direction: column;
+  background: var(--bg);
 `;
 
 const Header = styled.div`
   padding: 16px 18px;
   border-bottom: 1px solid var(--border);
   background: var(--panel);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 `;
 
 const Left = styled.div`
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
+`;
+
+const Right = styled.div`
+  display: flex;
+  gap: 8px;
+  flex: 0 0 auto;
 `;
 
 const Title = styled.div`
   font-weight: 900;
   font-size: 15px;
   color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 `;
 
 const Sub = styled.div`
@@ -133,78 +139,71 @@ const Body = styled.div`
   background: var(--bg);
 `;
 
-const Messages = styled.div`
-  max-width: 920px;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+const Empty = styled.div`
+  height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 20px 10px;
 `;
 
-const Empty = styled.div`
-  border: 1px dashed var(--border);
-  border-radius: 16px;
-  padding: 16px;
-  background: #fff;
+const EmptyCard = styled.div`
+  width: 100%;
+  max-width: 720px;
+  border-radius: 18px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  padding: 18px;
 `;
 
 const EmptyTitle = styled.div`
-  font-weight: 900;
+  font-size: 16px;
+  font-weight: 950;
   color: var(--text);
 `;
 
 const EmptySub = styled.div`
   margin-top: 6px;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--muted);
+  line-height: 1.4;
 `;
 
-const Card = styled.div`
-  border: 1px solid var(--border);
-  background: #fff;
-  border-radius: 16px;
-  padding: 14px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-`;
-
-const CardTop = styled.div`
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 10px;
-`;
-
-const CardTitle = styled.div`
-  font-weight: 900;
-  color: var(--text);
-`;
-
-const CardTime = styled.div`
-  font-size: 12px;
+const EmptyHints = styled.ul`
+  margin: 12px 0 0;
+  padding: 0 0 0 18px;
   color: var(--muted);
-`;
+  font-size: 12px;
 
-const Row = styled.div`
-  display: grid;
-  grid-template-columns: 140px 1fr;
-  gap: 10px;
-  padding: 6px 0;
-  border-top: 1px solid rgba(0,0,0,0.04);
-
-  &:first-of-type {
-    border-top: 0;
+  li {
+    margin: 6px 0;
   }
 `;
 
-const Key = styled.div`
-  font-size: 12px;
-  color: var(--muted);
+const SmallButton = styled.button`
+  border: 1px solid var(--border);
+  background: var(--hover);
+  color: var(--text);
+  border-radius: 12px;
+  padding: 8px 10px;
   font-weight: 800;
+  cursor: pointer;
+
+  &:hover {
+    background: #ededee;
+  }
 `;
 
-const Val = styled.div`
-  font-size: 12px;
-  color: var(--text);
-  font-weight: 700;
+const DangerButton = styled.button`
+  border: 1px solid rgba(239,68,68,0.25);
+  background: rgba(239,68,68,0.1);
+  color: var(--accent);
+  border-radius: 12px;
+  padding: 8px 10px;
+  font-weight: 900;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(239,68,68,0.14);
+  }
 `;
